@@ -11,7 +11,7 @@ defer: |
 
 ---
 
-[Curriculum Vitae on PDF](https://gunawan.wijaya.cc/assets/docs/gunawan.wijaya.pdf)
+[Curriculum Vitae on PDF](https://drive.google.com/file/d/1MKj5X5PLBAwqaPAOYFXATreJmVn7znS0/view)
 
 Below is the list of my project, click the image to enlarge, or click the link to see the live site.<sup>✱</sup>
 
