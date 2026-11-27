@@ -1,0 +1,88 @@
+name: generate-og-image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - ".github/workflows/og-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium
+
+      - name: Capture 1200x630 og-image.png
+        run: |
+          node -e '
+            const path = require("path");
+            const { chromium } = require("playwright");
+            (async () => {
+              const browser = await chromium.launch();
+              const page = await browser.newPage({
+                viewport: { width: 1200, height: 630 },
+                deviceScaleFactor: 1,
+                colorScheme: "dark"
+              });
+              await page.goto("file://" + path.resolve("index.html"), { waitUntil: "networkidle" });
+              await page.evaluate(() => {
+                document.documentElement.setAttribute("data-theme", "dark");
+                document.documentElement.setAttribute("data-theme-mode", "dark");
+              });
+              await page.addStyleTag({ content: `
+                .theme-switch, .actions, main, footer { display: none !important; }
+                body {
+                  margin: 0 !important;
+                  height: 630px !important;
+                  overflow: hidden !important;
+                  display: flex !important;
+                  align-items: center !important;
+                  justify-content: center !important;
+                  background: #0c0f14 !important;
+                }
+                .container {
+                  width: 100% !important;
+                  max-width: 1060px !important;
+                  padding: 48px 64px !important;
+                  margin: 0 !important;
+                }
+                .topbar {
+                  margin-bottom: 28px !important;
+                  padding-bottom: 16px !important;
+                }
+                .brand { font-size: 1.15rem !important; }
+                .brand-icon { width: 30px !important; height: 30px !important; }
+                header { margin-bottom: 0 !important; }
+                h1 { font-size: 3.4rem !important; margin-bottom: 12px !important; }
+                .headline { font-size: 1.55rem !important; margin-bottom: 8px !important; }
+                .location { font-size: 1.15rem !important; margin-bottom: 22px !important; }
+                .summary { font-size: 1.25rem !important; line-height: 1.55 !important; max-width: 100% !important; margin-bottom: 0 !important; }
+              ` });
+              await page.screenshot({ path: "og-image.png", type: "png" });
+              await browser.close();
+            })();
+          '
+
+      - name: Commit og-image.png if changed
+        run: |
+          if [ -n "$(git status --porcelain og-image.png)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add og-image.png
+            git commit -m "chore(og): auto-generate 1200x630 og-image.png from index.html"
+            git push
+          fi
