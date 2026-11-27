@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Gunawan Wijaya: Engineering Lead and Principal Backend Engineer (Go) focused on Applied AI, zero-skew ML serving, and distributed systems." />
   <title>Gunawan Wijaya | Engineering Lead &amp; Principal Backend Engineer (Go)</title>
+  <link id="favicon" rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <meta id="theme-color" name="theme-color" content="#f8fafc" />
   <script>
     (function () {
       var saved = localStorage.getItem("theme-preference") || "system";
@@ -30,6 +32,8 @@
       --accent-soft: #e8eef6;
       --border: #e2e8f0;
       --shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --avatar-bg: #f0f2f5;
+      --avatar-fg: #d34f4f;
     }
 
     html[data-theme="dark"] {
@@ -42,6 +46,37 @@
       --accent-soft: rgba(96, 165, 250, 0.12);
       --border: #252e3d;
       --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      --avatar-bg: #141922;
+      --avatar-fg: #f06565;
+    }
+    
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .brand-icon .bg {
+      fill: var(--avatar-bg);
+      transition: fill 0.18s ease;
+    }
+
+    .brand-icon .fg {
+      fill: var(--avatar-fg);
+      transition: fill 0.18s ease;
     }
 
     * {
@@ -383,12 +418,61 @@
         grid-column: 1 / -1;
       }
     }
+
+    /* Smooth unified theme cross-fade (modern browsers) */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 220ms;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Fallback: sync every element on the exact same clock */
+    html.theme-transition,
+    html.theme-transition *,
+    html.theme-transition *::before,
+    html.theme-transition *::after {
+      transition:
+        background-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        fill 220ms cubic-bezier(0.4, 0, 0.2, 1),
+        stroke 220ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.01ms;
+      }
+      html.theme-transition,
+      html.theme-transition *,
+      html.theme-transition *::before,
+      html.theme-transition *::after {
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <nav class="topbar" aria-label="Site navigation and theme controls">
-      <a class="brand" href="https://gunawan.wijaya.cc">gunawan.wijaya.cc</a>
+      <a class="brand" href="https://gunawan.wijaya.cc">
+        <svg class="brand-icon" viewBox="0 0 6 6" aria-hidden="true">
+          <rect class="bg" width="6" height="6" />
+          <g class="fg" transform="translate(0.5, 0.5)" shape-rendering="crispEdges">
+            <rect x="1" y="0" width="1" height="1" />
+            <rect x="3" y="0" width="1" height="1" />
+            <rect x="0" y="1" width="1" height="2" />
+            <rect x="2" y="1" width="1" height="1" />
+            <rect x="4" y="1" width="1" height="2" />
+            <rect x="1" y="3" width="1" height="1" />
+            <rect x="3" y="3" width="1" height="1" />
+            <rect x="2" y="4" width="1" height="1" />
+          </g>
+        </svg>
+        <span>gunawan.wijaya.cc</span>
+      </a>
       <div class="theme-switch" role="group" aria-label="Color theme">
         <button type="button" class="theme-btn" data-set-theme="system" aria-pressed="true">System</button>
         <button type="button" class="theme-btn" data-set-theme="light" aria-pressed="false">Light</button>
@@ -552,34 +636,86 @@
     (function () {
       var root = document.documentElement;
       var media = window.matchMedia("(prefers-color-scheme: dark)");
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       var buttons = document.querySelectorAll("[data-set-theme]");
+      var faviconEl = document.getElementById("favicon");
+      var themeColorEl = document.getElementById("theme-color");
+      var transitionTimer = null;
 
-      function applyTheme(mode) {
+      function buildFaviconUri(resolvedTheme) {
+        var bg = resolvedTheme === "dark" ? "#141922" : "#f0f2f5";
+        var fg = resolvedTheme === "dark" ? "#f06565" : "#d34f4f";
+        var svg =
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 6">' +
+          '<rect fill="' + bg + '" width="6" height="6" rx="1.15"/>' +
+          '<g fill="' + fg + '" transform="translate(0.5,0.5)" shape-rendering="crispEdges">' +
+          '<rect x="1" y="0" width="1" height="1"/>' +
+          '<rect x="3" y="0" width="1" height="1"/>' +
+          '<rect x="0" y="1" width="1" height="2"/>' +
+          '<rect x="2" y="1" width="1" height="1"/>' +
+          '<rect x="4" y="1" width="1" height="2"/>' +
+          '<rect x="1" y="3" width="1" height="1"/>' +
+          '<rect x="3" y="3" width="1" height="1"/>' +
+          '<rect x="2" y="4" width="1" height="1"/>' +
+          '</g></svg>';
+        return "data:image/svg+xml," + encodeURIComponent(svg);
+      }
+
+      function commitTheme(mode) {
+        var resolved = (mode === "light" || mode === "dark")
+          ? mode
+          : (media.matches ? "dark" : "light");
+
         root.setAttribute("data-theme-mode", mode);
-        if (mode === "light" || mode === "dark") {
-          root.setAttribute("data-theme", mode);
-        } else {
-          root.setAttribute("data-theme", media.matches ? "dark" : "light");
+        root.setAttribute("data-theme", resolved);
+
+        if (faviconEl) {
+          faviconEl.setAttribute("href", buildFaviconUri(resolved));
         }
+        if (themeColorEl) {
+          themeColorEl.setAttribute("content", resolved === "dark" ? "#0c0f14" : "#f8fafc");
+        }
+
         buttons.forEach(function (btn) {
           btn.setAttribute("aria-pressed", btn.getAttribute("data-set-theme") === mode ? "true" : "false");
         });
       }
 
+      function applyTheme(mode, animate) {
+        if (!animate || reduceMotion.matches) {
+          commitTheme(mode);
+          return;
+        }
+
+        if (document.startViewTransition) {
+          document.startViewTransition(function () {
+            commitTheme(mode);
+          });
+          return;
+        }
+
+        clearTimeout(transitionTimer);
+        root.classList.add("theme-transition");
+        commitTheme(mode);
+        transitionTimer = setTimeout(function () {
+          root.classList.remove("theme-transition");
+        }, 240);
+      }
+
       var currentMode = localStorage.getItem("theme-preference") || "system";
-      applyTheme(currentMode);
+      applyTheme(currentMode, false);
 
       buttons.forEach(function (btn) {
         btn.addEventListener("click", function () {
           var mode = btn.getAttribute("data-set-theme");
           localStorage.setItem("theme-preference", mode);
-          applyTheme(mode);
+          applyTheme(mode, true);
         });
       });
 
       var onSystemChange = function () {
         if ((localStorage.getItem("theme-preference") || "system") === "system") {
-          applyTheme("system");
+          applyTheme("system", true);
         }
       };
 
